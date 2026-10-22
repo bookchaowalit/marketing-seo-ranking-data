@@ -33,7 +33,7 @@ def _load_shared():
         if str(scripts) not in sys.path:
             sys.path.insert(0, str(scripts))
     try:
-        from data_lake import product_adapter as pa  # type: ignore
+        from data_lake import product_adapter as pa
     except ImportError as exc:
         raise ImportError(
             "shared data_lake runtime not found: install the [lake] extra "
@@ -242,7 +242,8 @@ def ranking_records_from_check(
         if not d or rank is None:
             continue
         prev = by_domain.get(d)
-        if prev is None or rank < valid_rank(prev.get("rank")):
+        prev_rank = valid_rank(prev.get("rank")) if prev is not None else None
+        if prev_rank is None or rank < prev_rank:
             by_domain[d] = pos
 
     records: list[dict[str, Any]] = []

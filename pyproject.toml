@@ -1,9 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "book-seo-data"
 version = "0.1.0"
-description = "SEO ranking and search intelligence data ingestion."
+description = "Owned-page reachability and provenance data (seo.v1), lake-first."
 requires-python = ">=3.11"
-dependencies = ["httpx>=0.27", "beautifulsoup4>=4.12", "python-dotenv>=1.0"]
+# Keep in sync with requirements-collect.txt: setup_cron.sh installs the scheduled capture's
+# venv from that file (scheduler changes are on hold, owner decision D6).
+dependencies = [
+  "httpx>=0.27",
+  "beautifulsoup4>=4.12",
+  "python-dotenv>=1.0",
+  "lxml>=5.0.0",
+  # Transitive floors (httpx -> anyio, idna) for known vulnerabilities.
+  "anyio>=4.14.2",
+  "idna>=3.15",
+  # Opt-in error reporting for the scheduled capture (src/book_seo/observability.py); off without SENTRY_DSN.
+  "sentry-sdk>=2.72,<3",
+]
 
 [project.optional-dependencies]
 # Shared lake-first runtime (landing, Bronze Parquet, Silver, DuckDB reads).
@@ -13,15 +29,52 @@ lake = [
   "pyarrow>=14.0.0,<24.0.0",
   "solo-empire-data-lake[lake] @ https://github.com/bookchaowalit/data-lake-core/archive/b8f8698995a4d4283247bd432d521b337ef8ec94.tar.gz",
 ]
+dev = ["pytest>=8", "pytest-cov>=7", "ruff==0.16.9", "mypy==2.4.0"]
 
 [project.scripts]
 book-seo-data = "book_seo.ingest:main"
 book-seo-data-api = "book_seo.api:main"
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+testpaths = ["tests"]
 
 [tool.ruff.lint]
 # Pin the classic default rule set explicitly so newer ruff releases (0.16+
 # widened the defaults) do not change what CI enforces.
 select = ["E4", "E7", "E9", "F"]
+
+[tool.coverage.run]
+source = ["src", "scripts"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src", "scripts", "tests"]
+# scripts/ and tests/ are flat modules on sys.path, not packages.
+mypy_path = ["src", "scripts"]
+explicit_package_bases = true
+# Gradual: bodies are checked (check_untyped_defs) without requiring annotations
+# everywhere. New modules are strict (override below); tighten the rest module by module.
+check_untyped_defs = true
+strict_equality = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["book_seo.observability"]
+disallow_any_generics = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+no_implicit_reexport = true
+warn_return_any = true
+
+# No stubs or py.typed for these.
+[[tool.mypy.overrides]]
+module = ["pyarrow", "pyarrow.*", "duckdb", "data_lake", "data_lake.*"]
+ignore_missing_imports = true

@@ -19,7 +19,7 @@ def _load_product_store():
             if str(scripts) not in sys.path:
                 sys.path.insert(0, str(scripts))
             break
-    from data_lake import product_store as ps  # type: ignore
+    from data_lake import product_store as ps
 
     return ps
 
@@ -39,7 +39,7 @@ def storage_model_for_source_kind(source_kind: Any) -> str:
 
 
 def _contract():
-    from data_lake.product_adapter import LakeProductContract  # type: ignore
+    from data_lake.product_adapter import LakeProductContract
 
     return LakeProductContract(
         source=config.LAKE_SOURCE,

@@ -101,7 +101,7 @@ class RankingRecordQualityTests(unittest.TestCase):
 
 
 class CliValidationTests(unittest.TestCase):
-    def _exit_code(self, argv: list[str]) -> int:
+    def _exit_code(self, argv: list[str]) -> str | int | None:
         with (
             contextlib.redirect_stderr(io.StringIO()),
             self.assertRaises(SystemExit) as ctx,

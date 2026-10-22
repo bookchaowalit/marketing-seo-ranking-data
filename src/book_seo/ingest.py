@@ -66,10 +66,10 @@ try:
     from . import lake as _lake
     from .fsutil import atomic_append_csv, atomic_write_csv
 except ImportError:  # pragma: no cover
-    _dp_config = None
-    _lake = None
+    _dp_config = None  # type: ignore[assignment]
+    _lake = None  # type: ignore[assignment]
 
-    def evaluate_provider(name):
+    def evaluate_provider(name):  # type: ignore[misc]
         class D:
             allowed = True
             status = "free"
@@ -77,13 +77,13 @@ except ImportError:  # pragma: no cover
 
         return D()
 
-    def require_provider(name):
+    def require_provider(name):  # type: ignore[misc]
         return evaluate_provider(name)
 
-    def external_writes_allowed():
+    def external_writes_allowed():  # type: ignore[misc]
         return False
 
-    def seed_fixtures(data_dir=None):
+    def seed_fixtures(data_dir=None):  # type: ignore[misc]
         return None
 
 
@@ -197,7 +197,7 @@ def fetch_public_page_search_raw(
             return raw, "text/html", []
         soup = BeautifulSoup(resp.text, "html.parser")
         for a_tag in soup.find_all("a", href=True):
-            href = a_tag["href"]
+            href = str(a_tag["href"])
             m = re.search(r"/url\?q=(https?://[^&]+)", href)
             url = m.group(1) if m else href
             # Skip Google/YouTube hosts only; a substring test also dropped
@@ -259,7 +259,7 @@ def check_ranking(
     if results is None:
         results = google_search(keyword, limit=limit)
 
-    rankings = {
+    rankings: dict[str, Any] = {
         "keyword": keyword,
         "total_results": len(results),
         "found": False,
@@ -293,7 +293,7 @@ def check_ranking(
 
 
 def load_previous_rankings(history_file: Path) -> dict:
-    previous = {}
+    previous: dict[str, Any] = {}
     if not history_file.exists():
         return previous
     with open(history_file, "r", encoding="utf-8") as f:
@@ -416,7 +416,7 @@ def append_history(rankings: list, output_dir: Path):
     return project_history_csv(rows, output_dir)
 
 
-def print_summary(rankings: list, previous: dict, alert_improve: int = None):
+def print_summary(rankings: list, previous: dict, alert_improve: Optional[int] = None):
     found_count = sum(1 for r in rankings if r.get("found"))
     print(f"\n  Rankings: {found_count}/{len(rankings)} keywords found")
     print("\n  Keyword Rankings:")
