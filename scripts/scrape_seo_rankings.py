@@ -138,7 +138,11 @@ def parse_page(domain: str, url: str, status_code: int, html: str) -> dict[str, 
     soup = BeautifulSoup(html or "", "html.parser")
     title = _clean_text(soup.title.get_text() if soup.title else "", 200)
     canonical = ""
-    link = soup.find("link", rel=lambda value: value and "canonical" in value)
+    # Link types are ASCII case-insensitive (rel="Canonical" counts).
+    link = soup.find(
+        "link",
+        rel=lambda value: bool(value) and "canonical" in str(value).lower().split(),
+    )
     if link and link.get("href"):
         canonical = str(link["href"]).strip()
     ok = 200 <= int(status_code) < 400 and bool(title)
