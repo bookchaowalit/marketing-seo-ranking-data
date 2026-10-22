@@ -56,7 +56,7 @@ no domain answers ends in a bare traceback.
 |---|---|---|
 | AC-01..03 | `6137fb6` · `python -m pytest -q tests/test_run_job_sentry.py` · `AssertionError: 0 != 1` (no Sentry message), `ValueError` escapes `main()` | [run 39713246132](https://github.com/bookchaowalit/marketing-seo-ranking-data/actions/runs/39713246132) (success, 3.11 + 3.13) |
 | AC-04 | `79ef56f` · `python -m pytest -q tests/test_scrape_page_capture.py` · `AssertionError: '' != 'https://chaowalit.com/'` | [run 39713246132](https://github.com/bookchaowalit/marketing-seo-ranking-data/actions/runs/39713246132) (success, 3.11 + 3.13) |
-| AC-07 | `0c9bb52` · `python -m pytest -q tests/test_run_job_sentry.py` · `AssertionError: None is not False` | `GREEN_CI_2` |
+| AC-07 | `0c9bb52` · `python -m pytest -q tests/test_run_job_sentry.py` · `AssertionError: None is not False` | [run 39755298383](https://github.com/bookchaowalit/marketing-seo-ranking-data/actions/runs/39755298383) (success, 3.11 + 3.13) |
 
 ## Schedule (planned replacement, D6)
 
