@@ -127,17 +127,24 @@ explicit `LAKE_READ_FALLBACK=parquet` flag is selected.
 ## Tests
 
 ```bash
-# What CI runs: the [lake] extra installs the pinned solo-empire-data-lake
-# runtime (plus pyarrow/duckdb), so Bronze/Silver lake tests run standalone
-python -m pip install -e ".[lake]" pytest ruff
-ruff check .
-python -m pytest -q -rs
-
-# Contract/policy only: without the extra, lake tests skip with a reason
-python -m pip install -e . pytest
-python -m pytest -q -rs
+# What CI runs (uv 0.13+): uv.lock installs the package, the dev tools and the [lake]
+# extra (pinned solo-empire-data-lake runtime), so Bronze/Silver lake tests run standalone
+uv sync --frozen --all-extras
+uv run ruff check . && uv run ruff format --check .
+uv run mypy                                   # scope: [tool.mypy] files in pyproject.toml
+FREE_ONLY=true uv run python -m pytest -q -rs --cov   # CI gate: total coverage >= 68%
 
 # Without the [lake] extra: SOLO_DATA_LAKE_ROOT points at a data-lake
 # checkout whose infra/scripts/data_lake supplies the shared runtime
 SOLO_DATA_LAKE_ROOT=/path/to/solo-data-lake python -m pytest -q
 ```
+
+All tests are offline: page captures use saved HTML under `fixtures/pages/`.
+`requirements-collect.txt` is the cron venv's install list (`setup_cron.sh`); keep it in
+sync with `[project] dependencies`.
+
+## Error reporting
+
+Set `SENTRY_DSN` (and optionally `SENTRY_ENVIRONMENT`) for `scripts/run_seo.py` to report an
+unreachable owned domain (warning) or a failed run (exception, exit 1). Off when unset.
+See [PRODUCT.md](PRODUCT.md) for what runs today.

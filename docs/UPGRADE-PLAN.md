@@ -9,8 +9,8 @@ Score: 8/10 -> 8.5/10 — rankings now match target hosts exactly (no lookalike/
   so `claude/untitled-session-bhlj06` has been verified locally only; keep it required on `main`.
 - P1: When `solo-empire-data-lake` moves, bump the pinned commit in `[lake]` together with
   the other book-*-data repos (same SHA everywhere).
-- P2: Add a `[project.optional-dependencies] dev` extra and a `[build-system]` table so
-  `pip install -e ".[dev]"` is the single documented setup.
+- ~~P2: Add a `dev` extra and a `[build-system]` table~~ done 2026-10-22 (SPEC-001: uv.lock,
+  dev extra, setuptools backend).
 - P2: `load_previous_rankings` keys by keyword only; key by keyword + target domain so
   multi-domain runs compare like with like.
 
