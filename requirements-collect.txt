@@ -7,5 +7,7 @@ lxml>=5.0.0
 # anyio PYSEC-2026-4024 / PYSEC-2026-4025, idna PYSEC-2026-215.
 anyio>=4.14.2
 idna>=3.15
+# certifi PYSEC-2026-4320 / GHSA-6q48-6c7w-9gw2.
+certifi>=2026.10.19
 # Opt-in error reporting (src/book_seo/observability.py); inactive unless SENTRY_DSN is set.
 sentry-sdk>=2.72,<3

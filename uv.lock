@@ -105,6 +105,7 @@ source = { editable = "." }
 dependencies = [
     { name = "anyio" },
     { name = "beautifulsoup4" },
+    { name = "certifi" },
     { name = "httpx" },
     { name = "idna" },
     { name = "lxml" },
@@ -129,6 +130,7 @@ lake = [
 requires-dist = [
     { name = "anyio", specifier = ">=4.14.2" },
     { name = "beautifulsoup4", specifier = ">=4.12" },
+    { name = "certifi", specifier = ">=2026.10.19" },
     { name = "duckdb", marker = "extra == 'lake'", specifier = ">=1.1.0,<2.0.0" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "idna", specifier = ">=3.15" },
