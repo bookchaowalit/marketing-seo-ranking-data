@@ -273,6 +273,9 @@ class SEORankingScraper:
                 "output": str(snapshot_path),
                 "history": str(history_path),
                 "raw": str(raw_path),
+                "failed_domains": [
+                    row["domain"] for row in rows if row["data_status"] != "ok"
+                ],
             }
         ]
 

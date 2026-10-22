@@ -12,7 +12,14 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+# The cron venv (setup_cron.sh) installs requirements-collect.txt only, not this package.
+sys.path.insert(0, str(ROOT / "src"))
 
+from book_seo.observability import (  # noqa: E402
+    init_sentry,
+    report_exception,
+    report_message,
+)
 from scrape_seo_rankings import SEORankingScraper  # noqa: E402
 
 JOBS = (("seo_rankings", SEORankingScraper),)
@@ -37,7 +44,19 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, default=ROOT / "data" / "exported")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
-    results = asyncio.run(run_seo(args.output_dir))
+    sdk = init_sentry("seo_rankings")
+    try:
+        results = asyncio.run(run_seo(args.output_dir))
+    except Exception as exc:  # reported, then the run exits non-zero
+        report_exception(sdk, exc)
+        print(f"[run_seo] failed: {exc}", file=sys.stderr)
+        return 1
+    failed = [domain for batch in results for domain in batch.get("failed_domains", [])]
+    if failed:
+        report_message(
+            sdk,
+            f"seo_rankings: {len(failed)} owned domain(s) unreachable: {', '.join(failed)}",
+        )
     if args.json:
         print(json.dumps(results, ensure_ascii=False))
     return 0
