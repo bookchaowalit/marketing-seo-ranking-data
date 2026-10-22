@@ -139,7 +139,7 @@ FREE_ONLY=true uv run python -m pytest -q -rs --cov   # CI gate: total coverage 
 SOLO_DATA_LAKE_ROOT=/path/to/solo-data-lake python -m pytest -q
 ```
 
-All tests are offline: page captures use saved HTML under `fixtures/pages/`.
+All tests are offline: page captures use saved HTML under `tests/fixtures/pages/`.
 `requirements-collect.txt` is the cron venv's install list (`setup_cron.sh`); keep it in
 sync with `[project] dependencies`.
 

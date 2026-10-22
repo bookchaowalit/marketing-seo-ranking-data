@@ -1,6 +1,6 @@
 """Scheduled owned-page capture (scripts/scrape_seo_rankings.py) against saved HTML fixtures.
 
-No network: ``fetch_page`` is replaced by a fake that parses files under fixtures/pages/.
+No network: ``fetch_page`` is replaced by a fake that parses files under tests/fixtures/pages/.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from typing import Any
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-PAGES = ROOT / "fixtures" / "pages"
+PAGES = ROOT / "tests" / "fixtures" / "pages"
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import scrape_seo_rankings as capture  # noqa: E402
