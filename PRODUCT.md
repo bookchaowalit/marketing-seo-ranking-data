@@ -15,7 +15,7 @@ Rankings would need Search Console / an authenticated import, which is not built
 | Lake ingest | `book-seo-data` / `python -m book_seo.ingest` (manual): landing → Bronze `domain=seo/dataset=seo_rankings(_history)` → manifest + lineage via the shared `data_lake` runtime (`[lake]` extra, pinned data-lake-core commit). Not scheduled |
 | API | `book-seo-data-api` / `python -m book_seo.api` on `127.0.0.1:8106`, GET-only; `POST /v1/refresh` 403 by default. Started by hand; no hosted deployment |
 | Hosted deployment | None. No cloud job, no public endpoint |
-| Error reporting | Sentry, opt-in: `sentry-sdk` is a dependency, but nothing is sent unless `SENTRY_DSN` is set. In `run_seo.py` an unreachable owned domain sends one `warning` event; a failed run sends the exception and exits 1. No DSN is configured anywhere yet [ต้องยืนยัน] |
+| Error reporting | Sentry, opt-in: `sentry-sdk` is a dependency, but nothing is sent unless `SENTRY_DSN` is set. In `run_seo.py` an unreachable owned domain sends one `warning` event; a failed run sends the exception (type and stack only: no locals, request bodies or exception text) and exits 1. No DSN is configured anywhere yet [ต้องยืนยัน] |
 | Contract | `seo.v1`, port 8106, in the frozen `data-product-contracts-v2.yaml`; owned-page semantics in [DATA-CONTRACT.md](DATA-CONTRACT.md). Checked offline by `tests/test_contract_registry_v2.py` and `tests/test_contract_freeze.py` |
 | Quality gates in CI | ruff, ruff format, mypy (gradual), offline pytest with coverage ≥ 68% on Python 3.11 and 3.13 (lake tests included through the `[lake]` extra), compile + CLI smoke, shared security scan |
 

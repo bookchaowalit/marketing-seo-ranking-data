@@ -35,6 +35,8 @@ no domain answers ends in a bare traceback.
 5. The product's port, schema version, policy defaults, `data_status` values, required GET
    endpoints and owned-page item fields match the frozen registry `data-product-contracts-v2`.
 6. CI fails when total coverage drops below 68%.
+7. Sentry events carry no PII, frame locals, request bodies or exception text
+   (`include_local_variables=False`, `max_request_body_size="never"`, `before_send=scrub_event`).
 
 ## Acceptance
 
@@ -45,6 +47,7 @@ no domain answers ends in a bare traceback.
 | AC-03 | Given no `SENTRY_DSN`, when the run fails, then Sentry is not initialised | `test_without_dsn_sentry_stays_off`, `test_clean_run_sends_nothing` |
 | AC-04 | Given saved HTML fixtures, when pages are parsed and a run is written, then title/canonical/status follow DATA-CONTRACT.md, `rank` stays blank and the history header is written once | `tests/test_scrape_page_capture.py` |
 | AC-05 | The product matches registry v2 offline | `tests/test_contract_registry_v2.py` |
+| AC-07 | Events drop locals, request data and exception text (security review, MEDIUM) | `test_run_job_sentry.py::test_events_carry_no_locals_request_data_or_exception_text` |
 | AC-06 | CI on `main` is green on Python 3.11 and 3.13 with the coverage gate | CI run below |
 
 ## Red/green log
@@ -53,6 +56,7 @@ no domain answers ends in a bare traceback.
 |---|---|---|
 | AC-01..03 | `6137fb6` · `python -m pytest -q tests/test_run_job_sentry.py` · `AssertionError: 0 != 1` (no Sentry message), `ValueError` escapes `main()` | [run 39713246132](https://github.com/bookchaowalit/marketing-seo-ranking-data/actions/runs/39713246132) (success, 3.11 + 3.13) |
 | AC-04 | `79ef56f` · `python -m pytest -q tests/test_scrape_page_capture.py` · `AssertionError: '' != 'https://chaowalit.com/'` | [run 39713246132](https://github.com/bookchaowalit/marketing-seo-ranking-data/actions/runs/39713246132) (success, 3.11 + 3.13) |
+| AC-07 | `0c9bb52` · `python -m pytest -q tests/test_run_job_sentry.py` · `AssertionError: None is not False` | `GREEN_CI_2` |
 
 ## Schedule (planned replacement, D6)
 
