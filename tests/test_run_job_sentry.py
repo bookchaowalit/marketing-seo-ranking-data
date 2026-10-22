@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
 import sys
 import tempfile
@@ -115,6 +116,37 @@ class RunJobSentryTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual((self.sentry.messages, self.sentry.exceptions), ([], []))
         self.assertIsNotNone(self.sentry.init_kwargs)
+
+    def test_events_carry_no_locals_request_data_or_exception_text(self):
+        self.run_main(
+            {"bookchaowalit.com": 500, "chaowalit.com": 500},
+            "https://key@example.invalid/1",
+        )
+        kwargs: dict[str, Any] = self.sentry.init_kwargs or {}
+        self.assertIs(kwargs.get("include_local_variables"), False)
+        self.assertEqual(kwargs.get("max_request_body_size"), "never")
+        before_send: Any = kwargs.get("before_send")
+        self.assertTrue(callable(before_send))
+        event = {
+            "request": {"headers": {"Authorization": "Bearer secret-token"}},
+            "exception": {
+                "values": [
+                    {
+                        "type": "ValueError",
+                        "value": "fetch failed token=secret-token",
+                        "stacktrace": {
+                            "frames": [
+                                {"function": "f", "vars": {"html": "secret-token"}}
+                            ]
+                        },
+                    }
+                ]
+            },
+        }
+        scrubbed = before_send(event, {})
+        self.assertNotIn("secret-token", json.dumps(scrubbed))
+        self.assertNotIn("request", scrubbed)
+        self.assertEqual(scrubbed["exception"]["values"][0]["type"], "ValueError")
 
     def test_without_dsn_sentry_stays_off(self):
         code = self.run_main({"bookchaowalit.com": 500, "chaowalit.com": 500}, "")
