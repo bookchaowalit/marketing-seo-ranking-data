@@ -16,21 +16,29 @@ concurrency:
 
 jobs:
   python:
-    uses: bookchaowalit/platform-ci-workflows/.github/workflows/ci-python.yml@c37ef9d113eefb3ed45429717cb7ca201192c3fc # v1.0.1
+    strategy:
+      fail-fast: false
+      matrix:
+        # Lowest supported (requires-python) and a current release.
+        python-version: ["3.11", "3.13"]
+    uses: bookchaowalit/platform-ci-workflows/.github/workflows/ci-python.yml@87dc5e1c7e0416886a6371d5a101bb2ccba38edd # v1.1.1
     with:
-      python-version: "3.12"
-      # The [lake] extra installs the pinned shared lake runtime (data-lake-core), so the
-      # Bronze/Silver lake tests run here instead of skipping.
-      install-command: uv pip install -e ".[lake]" "pytest==9.1.1"
-      # Same checks as the previous workflow: free-only guards, lake runtime importable,
-      # tests (-rs keeps any skips visible), compile and CLI smoke.
+      python-version: ${{ matrix.python-version }}
+      # Installs from uv.lock (uv sync --frozen --all-extras): the [lake] extra brings the pinned
+      # shared lake runtime (data-lake-core), so Bronze/Silver lake tests run instead of skipping;
+      # mypy and ruff come from the dev extra.
+      # Ratchet: measured 68.54% on 2026-10-22 (ADR-0004: threshold = measured, rounded down);
+      # raise it as tests grow (80% floor is a follow-up).
+      coverage-threshold: "68"
+      # Free-only guards, lake runtime importable, offline tests under coverage (-rs keeps any
+      # skips visible), compile and CLI smoke.
       test-command: |
         export FREE_ONLY=true ALLOW_PAID_PROVIDERS=false ALLOW_EXTERNAL_WRITES=false
         python -c "import data_lake.product_adapter, data_lake.silver"
-        python -m pytest -q -rs
-        python -m compileall -q src
-        python -m book_seo.ingest --help
-        book-seo-data --help
+        python -m pytest -q -rs --cov --cov-report=
+        python -m compileall -q src scripts
+        python -m book_seo.ingest --help > /dev/null
+        book-seo-data --help > /dev/null
 
   security:
-    uses: bookchaowalit/platform-ci-workflows/.github/workflows/security.yml@c37ef9d113eefb3ed45429717cb7ca201192c3fc # v1.0.1
+    uses: bookchaowalit/platform-ci-workflows/.github/workflows/security.yml@87dc5e1c7e0416886a6371d5a101bb2ccba38edd # v1.1.1
