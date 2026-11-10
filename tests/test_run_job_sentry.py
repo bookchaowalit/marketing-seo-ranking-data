@@ -24,6 +24,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import run_seo  # noqa: E402
 import scrape_seo_rankings as capture  # noqa: E402
+from book_seo import observability  # noqa: E402
 
 OK_HTML = "<html><head><title>Owned</title></head></html>"
 
@@ -52,6 +53,17 @@ class FakeSentry(types.ModuleType):
         return None
 
 
+class FakeLoggingIntegration:
+    def __init__(self, **kwargs: Any) -> None:
+        self.kwargs = kwargs
+
+
+FAKE_LOGGING = types.ModuleType("sentry_sdk.integrations.logging")
+FAKE_LOGGING.LoggingIntegration = FakeLoggingIntegration  # type: ignore[attr-defined]
+
+SECRET = "secret-token-123"
+
+
 def fake_fetch(statuses: dict[str, int]) -> Any:
     def fetch(domain: str) -> tuple[bytes, dict[str, Any]]:
         status = statuses[domain]
@@ -69,7 +81,13 @@ class RunJobSentryTests(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         self.out = tmp.name
         self.sentry = FakeSentry()
-        patcher = mock.patch.dict(sys.modules, {"sentry_sdk": self.sentry})
+        patcher = mock.patch.dict(
+            sys.modules,
+            {
+                "sentry_sdk": self.sentry,
+                "sentry_sdk.integrations.logging": FAKE_LOGGING,
+            },
+        )
         patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -153,6 +171,75 @@ class RunJobSentryTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIsNone(self.sentry.init_kwargs)
         self.assertEqual((self.sentry.messages, self.sentry.exceptions), ([], []))
+
+    def before_send(self) -> Any:
+        self.run_main(
+            {"bookchaowalit.com": 200, "chaowalit.com": 200},
+            "https://key@example.invalid/1",
+        )
+        kwargs: dict[str, Any] = self.sentry.init_kwargs or {}
+        return kwargs["before_send"]
+
+    def test_init_disables_log_to_event_and_breadcrumbs(self):
+        # The default LoggingIntegration turns logger.error(...) (ours or httpx's)
+        # into an event whose logentry holds free log text: URLs, page data, tokens.
+        self.before_send()
+        kwargs: dict[str, Any] = self.sentry.init_kwargs or {}
+        found = [
+            i for i in kwargs["integrations"] if isinstance(i, FakeLoggingIntegration)
+        ]
+        self.assertEqual(len(found), 1)
+        self.assertIsNone(found[0].kwargs["event_level"])
+        self.assertIsNone(found[0].kwargs["level"])
+        self.assertIsNone(found[0].kwargs["sentry_logs_level"])
+
+    def test_before_send_drops_logentry_and_breadcrumbs(self):
+        text = f"GET https://chaowalit.com/?token={SECRET} failed"
+        event = {
+            "logentry": {"message": text, "formatted": text, "params": [SECRET]},
+            "breadcrumbs": {"values": [{"message": text}]},
+        }
+        scrubbed = self.before_send()(event, {})
+        self.assertNotIn("logentry", scrubbed)
+        self.assertNotIn("breadcrumbs", scrubbed)
+        self.assertNotIn(SECRET, json.dumps(scrubbed))
+
+    def test_before_send_drops_foreign_message_keeps_own(self):
+        before_send = self.before_send()
+        for foreign in (
+            f"request to https://x.example/?token={SECRET}",
+            f"seo_rankings: 1 owned domain(s) unreachable: chaowalit.com {SECRET}",
+            "seo_rankings: 1 owned domain(s) unreachable: https://x.example/?q=1",
+        ):
+            self.assertNotIn("message", before_send({"message": foreign}, {}))
+        self.run_main(
+            {"bookchaowalit.com": 200, "chaowalit.com": 503},
+            "https://key@example.invalid/1",
+        )
+        own = self.sentry.messages[-1][0]
+        self.assertEqual(
+            own, "seo_rankings: 1 owned domain(s) unreachable: chaowalit.com"
+        )
+        self.assertEqual(before_send({"message": own}, {})["message"], own)
+
+    def test_unreachable_report_sends_safe_domain_names_only(self):
+        observability.report_unreachable_domains(
+            self.sentry,
+            "seo_rankings",
+            ["chaowalit.com", f"https://x.example/?token={SECRET}"],
+        )
+        message, level = self.sentry.messages[-1]
+        self.assertEqual(
+            message, "seo_rankings: 2 owned domain(s) unreachable: chaowalit.com, other"
+        )
+        self.assertEqual(level, "warning")
+
+    def test_before_send_blanks_exception_value(self):
+        event = {"exception": {"values": [{"type": "ValueError", "value": SECRET}]}}
+        scrubbed = self.before_send()(event, {})
+        self.assertEqual(
+            scrubbed["exception"]["values"][0], {"type": "ValueError", "value": ""}
+        )
 
 
 if __name__ == "__main__":

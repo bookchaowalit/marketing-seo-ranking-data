@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from book_seo.observability import (  # noqa: E402
     init_sentry,
     report_exception,
-    report_message,
+    report_unreachable_domains,
 )
 from scrape_seo_rankings import SEORankingScraper  # noqa: E402
 
@@ -52,11 +52,7 @@ def main() -> int:
         print(f"[run_seo] failed: {exc}", file=sys.stderr)
         return 1
     failed = [domain for batch in results for domain in batch.get("failed_domains", [])]
-    if failed:
-        report_message(
-            sdk,
-            f"seo_rankings: {len(failed)} owned domain(s) unreachable: {', '.join(failed)}",
-        )
+    report_unreachable_domains(sdk, "seo_rankings", failed)
     if args.json:
         print(json.dumps(results, ensure_ascii=False))
     return 0
