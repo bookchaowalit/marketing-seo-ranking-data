@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "book-seo-data"
 version = "0.1.0"
 description = "Owned-page reachability and provenance data (seo.v1), lake-first."
-requires-python = ">=3.11"
+requires-python = ">=3.11.5"
 # Keep in sync with requirements-collect.txt: setup_cron.sh installs the scheduled capture's
 # venv from that file (scheduler changes are on hold, owner decision D6).
 dependencies = [
